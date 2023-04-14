@@ -1,0 +1,139 @@
+---
+title: "Project Code"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(stringr)
+library(ineq) ## Used for Lorenz Curve and Gini coefficient functions
+```
+
+```{r}
+crash <- read.csv("/Users/dannymichalak/Documents/STATS306/Project/chicagotraffic2019.csv")
+```
+
+```{r}
+## I separated the crash data set into four others, each containing streets in only one cardinal direction, then used group_by and summarize to total the number of crashes on each unique street
+
+norths <- crash %>% select("STREET_NAME", "STREET_DIRECTION",) %>% filter(STREET_DIRECTION == "N") %>% group_by(STREET_NAME) %>% summarize(count = n()) %>% arrange(desc(count))
+
+souths <- crash %>% select("STREET_NAME", "STREET_DIRECTION") %>% filter(STREET_DIRECTION == "S") %>% group_by(STREET_NAME) %>% summarize(count = n()) %>% arrange(desc(count))
+
+easts <- crash %>% select("STREET_NAME", "STREET_DIRECTION") %>% filter(STREET_DIRECTION == "E") %>% group_by(STREET_NAME) %>% summarize(count = n()) %>% arrange(desc(count))
+
+wests <- crash %>% select("STREET_NAME", "STREET_DIRECTION") %>% filter(STREET_DIRECTION == "W") %>% group_by(STREET_NAME) %>% summarize(count = n()) %>% arrange(desc(count))
+```
+
+```{r}
+## Here I subdivided the data sets into the groupings necessary for the distribution curves - bottom 10% of streets involved, 20%, 30%, etc. I also created a top 10% set for each direction
+
+botN10 <- norths %>% slice(374:416)
+botN20 <- norths %>% slice(333:416)
+botN30 <- norths %>% slice(291:416)
+botN40 <- norths %>% slice(250:416)
+botN50 <- norths %>% slice(208:416)
+botN60 <- norths %>% slice(166:416)
+botN70 <- norths %>% slice(125:416)
+botN80 <- norths %>% slice(83:416)
+botN90 <- norths %>% slice(42:416)
+
+topN10 <- norths %>% slice(1:42)
+
+botS10 <- souths %>% slice(371:412)
+botS20 <- souths %>% slice(330:412)
+botS30 <- souths %>% slice(288:412)
+botS40 <- souths %>% slice(247:412)
+botS50 <- souths %>% slice(206:412)
+botS60 <- souths %>% slice(165:412)
+botS70 <- souths %>% slice(124:412)
+botS80 <- souths %>% slice(82:412)
+botS90 <- souths %>% slice(41:412)
+
+topS10 <- souths %>% slice(1:41)
+
+botE10 <- easts %>% slice(243:270)
+botE20 <- easts %>% slice(216:270)
+botE30 <- easts %>% slice(189:270)
+botE40 <- easts %>% slice(162:270)
+botE50 <- easts %>% slice(135:270)
+botE60 <- easts %>% slice(108:270)
+botE70 <- easts %>% slice(81:270)
+botE80 <- easts %>% slice(54:270)
+botE90 <- easts %>% slice(27:270)
+
+topE10 <- easts %>% slice(1:27)
+
+botW10 <- wests %>% slice(537:597)
+botW20 <- wests %>% slice(478:597)
+botW30 <- wests %>% slice(418:597)
+botW40 <- wests %>% slice(358:597)
+botW50 <- wests %>% slice(299:597)
+botW60 <- wests %>% slice(239:597)
+botW70 <- wests %>% slice(179:597)
+botW80 <- wests %>% slice(119:597)
+botW90 <- wests %>% slice(60:597)
+
+topW10 <- wests %>% slice(1:60)
+```
+
+```{r}
+## Here I used the subdivisions above to create a new data table showing the totals for each bottom percentile, as well as the percentage of crashes (within a directional group or across all data, but not within a directional group compared against total data) for each bottom percentile
+
+North <- c(sum(botN10$count), sum(botN20$count), sum(botN30$count), sum(botN40$count), sum(botN50$count), sum(botN60$count), sum(botN70$count), sum(botN80$count), sum(botN90$count), sum(norths$count))
+South <- c(sum(botS10$count), sum(botS20$count), sum(botS30$count), sum(botS40$count), sum(botS50$count), sum(botS60$count), sum(botS70$count), sum(botS80$count), sum(botS90$count), sum(souths$count))
+East <- c(sum(botE10$count), sum(botE20$count), sum(botE30$count), sum(botE40$count), sum(botE50$count), sum(botE60$count), sum(botE70$count), sum(botE80$count), sum(botE90$count), sum(easts$count))
+West <- c(sum(botW10$count), sum(botW20$count), sum(botW30$count), sum(botW40$count), sum(botW50$count), sum(botW60$count), sum(botW70$count), sum(botW80$count), sum(botW90$count), sum(wests$count))
+
+Percent_of_Rows <- c(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+
+Total_for_Rows <- c((sum(botN10$count) + sum(botS10$count) + sum(botE10$count) + sum(botW10$count)), (sum(botN20$count) + sum(botS20$count) + sum(botE20$count) + sum(botW20$count)), (sum(botN30$count) + sum(botS30$count) + sum(botE30$count) + sum(botW30$count)), (sum(botN40$count) + sum(botS40$count) + sum(botE40$count) + sum(botW40$count)), (sum(botN50$count) + sum(botS50$count) + sum(botE50$count) + sum(botW50$count)), (sum(botN60$count) + sum(botS60$count) + sum(botE60$count) + sum(botW60$count)), (sum(botN70$count) + sum(botS70$count) + sum(botE70$count) + sum(botW70$count)), (sum(botN80$count) + sum(botS80$count) + sum(botE80$count) + sum(botW80$count)), (sum(botN90$count) + sum(botS90$count) + sum(botE90$count) + sum(botW90$count)), (sum(norths$count) + sum(souths$count) + sum(easts$count) + sum(wests$count)))
+
+N_Percent_of_Crashes <- c((sum(botN10$count) / sum(norths$count)), (sum(botN20$count) / sum(norths$count)), (sum(botN30$count) / sum(norths$count)), (sum(botN40$count) / sum(norths$count)), (sum(botN50$count) / sum(norths$count)), (sum(botN60$count) / sum(norths$count)), (sum(botN70$count) / sum(norths$count)), (sum(botN80$count) / sum(norths$count)), (sum(botN90$count) / sum(norths$count)), 1)
+S_Percent_of_Crashes <- c((sum(botS10$count) / sum(souths$count)), (sum(botS20$count) / sum(souths$count)), (sum(botS30$count) / sum(souths$count)), (sum(botS40$count) / sum(souths$count)), (sum(botS50$count) / sum(souths$count)), (sum(botS60$count) / sum(souths$count)), (sum(botS70$count) / sum(souths$count)), (sum(botS80$count) / sum(souths$count)), (sum(botS90$count) / sum(souths$count)), 1)
+E_Percent_of_Crashes <- c((sum(botE10$count) / sum(easts$count)), (sum(botE20$count) / sum(easts$count)), (sum(botE30$count) / sum(easts$count)), (sum(botE40$count) / sum(easts$count)), (sum(botE50$count) / sum(easts$count)), (sum(botE60$count) / sum(easts$count)), (sum(botE70$count) / sum(easts$count)), (sum(botE80$count) / sum(easts$count)), (sum(botE90$count) / sum(easts$count)), 1)
+W_Percent_of_Crashes <- c((sum(botW10$count) / sum(wests$count)), (sum(botW20$count) / sum(wests$count)), (sum(botW30$count) / sum(wests$count)), (sum(botW40$count) / sum(wests$count)), (sum(botW50$count) / sum(wests$count)), (sum(botW60$count) / sum(wests$count)), (sum(botW70$count) / sum(wests$count)), (sum(botW80$count) / sum(wests$count)), (sum(botW90$count) / sum(wests$count)), 1)
+T_Percent_of_Crashes <- c((Total_for_Rows[1] / Total_for_Rows[10]), (Total_for_Rows[2] / Total_for_Rows[10]), (Total_for_Rows[3] / Total_for_Rows[10]), (Total_for_Rows[4] / Total_for_Rows[10]), (Total_for_Rows[5] / Total_for_Rows[10]), (Total_for_Rows[6] / Total_for_Rows[10]), (Total_for_Rows[7] / Total_for_Rows[10]), (Total_for_Rows[8] / Total_for_Rows[10]), (Total_for_Rows[9] / Total_for_Rows[10]), 1)
+
+distribution <- data.frame(Percent_of_Rows, North, South, East, West, Total_for_Rows, N_Percent_of_Crashes, S_Percent_of_Crashes, E_Percent_of_Crashes, W_Percent_of_Crashes, T_Percent_of_Crashes)
+
+distribution
+```
+
+```{r}
+## Inequality distributions by roads for each direction and total accidents
+
+plot(Lc(distribution$North), main = "Northbound Accidents")
+plot(Lc(distribution$South), main = "Southbound Accidents")
+plot(Lc(distribution$East), main = "Eastbound Accidents")
+plot(Lc(distribution$West), main = "Westbound Accidents")
+plot(Lc(distribution$Total_for_Rows), main = "All Accidents")
+```
+```{r}
+## Gini coefficient related to each graph above
+
+ineq(distribution$North, type = "Gini")
+ineq(distribution$South, type = "Gini")
+ineq(distribution$East, type = "Gini")
+ineq(distribution$West, type = "Gini")
+ineq(distribution$Total_for_Rows, type = "Gini")
+```
+
+```{r}
+## Inequality distributions among top 10% of roads for each direction
+
+plot(Lc(topN10$count), main = "Top 10% of Northbound Roads")
+plot(Lc(topS10$count), main = "Top 10% of Southbound Roads")
+plot(Lc(topE10$count), main = "Top 10% of Eastbound Roads")
+plot(Lc(topW10$count), main = "Top 10% Westbound Roads")
+```
+
+```{r}
+## Gini coefficients related to above graphs
+
+ineq(distribution$North, type = "Gini")
+ineq(distribution$South, type = "Gini")
+ineq(distribution$East, type = "Gini")
+ineq(distribution$West, type = "Gini")
+ineq(distribution$Total_for_Rows, type = "Gini")
+```
